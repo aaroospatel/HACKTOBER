@@ -1,0 +1,246 @@
+VYOM+ GST Invoice Intelligence - Workflow
+
+1. Project Goal
+
+Build an end-to-end AI-powered GST invoice intelligence system for VYOM+.
+The system accepts invoice or transaction documents in Excel, CSV, PDF, JPG,
+JPEG, and PNG formats, extracts GST and financial information, validates it,
+and returns standardized machine-readable output such as JSON or structured
+tables.
+
+2. Role of VYOM+
+
+VYOM+ is the target accounting/invoice-intelligence platform or use-case brand.
+Our project acts as the AI document-processing module for VYOM+.
+
+The system flow is:
+
+User uploads invoice to VYOM+
+-> Our pipeline processes the document
+-> Important invoice and GST fields are extracted
+-> Extracted values are validated
+-> Clean JSON/table output is returned
+-> VYOM+ can use the data for accounting workflows
+
+3. Supported Inputs
+
+- Excel files: .xlsx
+- CSV files: .csv
+- PDF files: digital PDFs and scanned PDFs
+- Image files: .jpg, .jpeg, .png
+
+4. High-Level Pipeline
+
+Upload file
+-> Detect file type
+-> Route to the correct parser
+-> Extract raw text, tables, or image content
+-> Use OCR/AI where required
+-> Convert extracted content into a standard invoice schema
+-> Validate GST, tax, totals, and required fields
+-> Return JSON/table output
+-> Show extracted data, confidence, errors, and warnings in the UI
+
+5. File Routing Logic
+
+If input is Excel or CSV:
+- Read using pandas/openpyxl.
+- Normalize column names.
+- Map available fields into the standard invoice schema.
+- Validate values and produce structured output.
+
+If input is digital PDF:
+- Extract text and tables using pdfplumber or PyMuPDF.
+- Send extracted text/tables to the structuring layer.
+- Validate and return output.
+
+If input is scanned PDF or image:
+- Render PDF pages to images if needed.
+- Run OCR using PaddleOCR, EasyOCR, or Tesseract.
+- For handwritten or complex invoices, use a document AI or vision-language model.
+- Convert extracted text into structured invoice JSON.
+- Validate and return output.
+
+6. Use of ML/AI
+
+We do not need to train a model from scratch for the hackathon MVP.
+
+ML/AI is used for:
+- OCR text extraction from scanned invoices and images.
+- Handwritten invoice understanding.
+- Layout or document understanding.
+- Converting messy OCR text into structured JSON.
+- Detecting uncertain or low-confidence fields.
+
+Recommended open-source/open-weight models and tools:
+- PaddleOCR for strong OCR.
+- EasyOCR or Tesseract as OCR alternatives.
+- TrOCR for handwritten text.
+- Donut or LayoutLMv3 for document understanding.
+- Qwen, Llama, Mistral, Gemma, or Phi for structured extraction from text.
+- Qwen-VL or LLaVA-style models for image/document reasoning if needed.
+
+Training is optional and can be a future improvement.
+If labeled GST invoice data becomes available, we can fine-tune a model using
+LoRA/QLoRA to improve handwritten and low-quality invoice extraction.
+
+7. Standard Invoice Schema
+
+The final output should follow a consistent structure, for example:
+
+{
+  "invoice_number": "INV-1024",
+  "invoice_date": "2026-10-05",
+  "supplier": {
+    "name": "ABC Traders",
+    "gstin": "27ABCDE1234F1Z5"
+  },
+  "buyer": {
+    "name": "XYZ Pvt Ltd",
+    "gstin": "29XYZAB5678K1Z2"
+  },
+  "line_items": [
+    {
+      "description": "Steel Rods",
+      "hsn": "7214",
+      "quantity": 10,
+      "rate": 500,
+      "taxable_value": 5000,
+      "gst_rate": 18,
+      "cgst": 450,
+      "sgst": 450,
+      "igst": 0
+    }
+  ],
+  "totals": {
+    "taxable_value": 5000,
+    "cgst": 450,
+    "sgst": 450,
+    "igst": 0,
+    "grand_total": 5900
+  },
+  "validation": {
+    "status": "valid",
+    "errors": [],
+    "warnings": []
+  }
+}
+
+8. Validation Layer
+
+Validation should mostly be rule-based and deterministic.
+The AI extracts information, but rules verify whether the extracted data is
+complete, properly formatted, and financially consistent.
+
+Schema validation:
+- Required fields should be present.
+- Dates should be valid dates.
+- Money fields should be valid numbers.
+- Line items should be structured as a list.
+- Output should match the expected JSON schema.
+
+GSTIN format validation:
+- GSTIN should be 15 characters.
+- General format:
+  [2 digit state code][10 character PAN][1 entity code][Z][1 checksum]
+- Example regex:
+  ^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z][1-9A-Z]Z[0-9A-Z]$
+
+Tax and total validation:
+- taxable_value + cgst + sgst + igst should approximately equal grand_total.
+- Sum of line item taxable values should match invoice taxable value.
+- Quantity * rate - discount should match line item taxable value where possible.
+- Use a small tolerance for rounding differences.
+
+GST logic validation:
+- If supplier GSTIN state code and buyer GSTIN state code are the same,
+  CGST + SGST is usually expected.
+- If supplier and buyer state codes are different, IGST is usually expected.
+- Flag suspicious cases for review instead of blindly rejecting them.
+
+Confidence validation:
+- OCR/AI confidence should be tracked where possible.
+- Low-confidence fields should be marked for manual review.
+- Missing or uncertain fields should produce warnings.
+
+9. Example Validation Output
+
+{
+  "status": "needs_review",
+  "errors": [
+    "Buyer GSTIN has invalid format"
+  ],
+  "warnings": [
+    "Grand total differs by 0.75 due to rounding",
+    "Supplier GSTIN OCR confidence is low"
+  ]
+}
+
+10. Suggested Tech Stack
+
+Frontend:
+- Streamlit for fast hackathon development.
+- Optional: React or Next.js for a more polished interface.
+
+Backend:
+- Python with FastAPI.
+
+Data processing:
+- pandas for CSV/Excel processing.
+- openpyxl for Excel reading.
+- pdfplumber or PyMuPDF for PDF extraction.
+
+OCR and AI:
+- PaddleOCR for OCR.
+- EasyOCR/Tesseract as alternatives.
+- Qwen, Llama, Mistral, Gemma, or Phi for structured extraction.
+- Optional vision-language model for handwritten invoices.
+
+Validation:
+- Pydantic for strict schema validation.
+- Custom GST and accounting rules.
+
+Storage:
+- SQLite for MVP.
+- PostgreSQL for production-style architecture.
+
+11. Evaluator Interface
+
+The evaluator should be able to:
+- Upload a document.
+- See the detected file type.
+- View extracted invoice fields.
+- View line items.
+- See validation status, errors, and warnings.
+- Download JSON or CSV output.
+- Compare the original document with extracted structured data.
+
+12. MVP Build Plan
+
+Phase 1:
+- Create upload UI.
+- Support CSV and Excel parsing.
+- Define standard invoice JSON schema.
+- Add basic validation rules.
+
+Phase 2:
+- Add PDF text extraction.
+- Add OCR for image and scanned PDF input.
+- Convert OCR text to structured JSON using an open-source LLM.
+
+Phase 3:
+- Improve validation.
+- Add confidence scores and manual review flags.
+- Add JSON/CSV export.
+
+Phase 4:
+- Improve handwritten invoice handling.
+- Add sample invoices and evaluation examples.
+- Polish README, architecture diagram, and demo flow.
+
+13. Final Expected Outcome
+
+A working document-intelligence system that accepts supported GST invoice
+formats and produces validated structured financial data suitable for downstream
+accounting workflows.
+

@@ -1,0 +1,37 @@
+# Python
+backend/venv/
+backend/.venv/
+venv/
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.pytest_cache/
+
+# Environment variables
+.env
+backend/.env
+frontend/.env
+frontend/.env.local
+
+# Databases & local storage
+*.db
+*.sqlite3
+backend/vyom_invoices.db
+backend/uploads/
+uploads/
+
+# Node / Next.js (Part 2)
+node_modules/
+frontend/node_modules/
+.next/
+frontend/.next/
+out/
+build/
+dist/
+
+# OS / IDE
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/

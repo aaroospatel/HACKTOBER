@@ -1,0 +1,3 @@
+Invoice Number,Invoice Date,Supplier Name,Supplier GSTIN,Buyer Name,Buyer GSTIN,Item Description,HSN Code,Quantity,Unit Price,Taxable Value,GST Rate,CGST,SGST,IGST,Total,Grand Total
+INV-2026-001,2026-10-05,ABC Technologies Pvt Ltd,27ABCDE1234F1Z5,XYZ Enterprises,27XYZAB5678K1Z2,Enterprise Cloud Server License,9973,2,25000,50000,18,4500,4500,0,59000,59000
+INV-2026-001,2026-10-05,ABC Technologies Pvt Ltd,27ABCDE1234F1Z5,XYZ Enterprises,27XYZAB5678K1Z2,Annual Maintenance Support,9987,1,10000,10000,18,900,900,0,11800,70800
